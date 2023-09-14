@@ -188,7 +188,9 @@ class TransformableGrid(GridWidget):
 
         for line in gridLines[:-2]:
             painter.drawPolyline(line)
-        
+        self.gridTransformation(gridLines)
+
+    def gridTransformation(self,gridLines):
         p = []
         p.append(transformToPoint(gridLines[-2]))
         
@@ -196,10 +198,33 @@ class TransformableGrid(GridWidget):
             p.append(transformToPoint(line))
         p.append(transformToPoint(gridLines[-1]))
         
-        grid = geometry.grid_from_lines(p,self._steps)
+        grid_origen = geometry.grid_from_lines(p,self._steps)
         img = cv2.imread(self._path)
-        grid._draw_points(img,255,2)
+        grid_origen._draw_points(img,(255,0,255),2)
         cv2.imshow('color',img)
+
+        """ 
+            A---------------B
+                            |
+                            |
+                            |
+                            C
+        """
+        panel_size = 10
+        pA = (10,10)
+        pB = (pA[1]+panel_size * self._steps , 10)
+        pC = (pB[0], pB[1]+panel_size * self._steps)
+
+        points_dest = []
+        for point in segmentLine([pB,pC],self._steps):
+            gridpoint = segmentLine([(pA[0],point[1]), point],self._steps)
+            points_dest.append(gridpoint)
+        
+        grid_dest = geometry.grid_from_lines(points_dest,self._steps)
+        #geometry.grid_transform(img,grid_origen,grid_dest)
+        #grid_dest._draw_points(img,(255,255,0),2)
+        #cv2.imshow('color',img)
+
 
     def _widgetToImage(self, point: QtCore.QPoint) -> QtCore.QPoint:
         """
@@ -351,34 +376,36 @@ class TransformableGrid(GridWidget):
 
     def getGrid(self):
         " Obtiene las lineas verticales y horizontales de acuerdo a las curvas de bezier"
-        vGuides = [transformToPoint(self._curvePoints[-1][::-1]),
+        try:
+            vGuides = [transformToPoint(self._curvePoints[-1][::-1]),
                    transformToPoint(self._curvePoints[1])]
-        hGuides = [transformToPoint(self._curvePoints[-2][::-1]),
+            hGuides = [transformToPoint(self._curvePoints[-2][::-1]),
                    transformToPoint(self._curvePoints[0])]
-        controlPoints = transformToPoint(self._controlPoints)
+            controlPoints = transformToPoint(self._controlPoints)
 
-        hGridLines, controlh = getGridLines(
-            (controlPoints[0], controlPoints[2]), vGuides, self._steps)
-        vGridLines, controlv = getGridLines(
-            (controlPoints[3], controlPoints[1]), hGuides, self._steps, True)
+            hGridLines, controlh = getGridLines(
+                (controlPoints[0], controlPoints[2]), vGuides, self._steps)
+            vGridLines, controlv = getGridLines(
+                (controlPoints[3], controlPoints[1]), hGuides, self._steps, True)
 
-        self._gridControlPoints = transformToQPoint(controlh+controlv)
+        
+            self._gridControlPoints = transformToQPoint(controlh+controlv)
 
-        """
-        gridLines = []
-        gridLines.append(transformToQPoint(linea) for linea in hGridLines)
-        gridLines.append(transformToQPoint(linea) for linea in vGridLines)"""
-        gridLines = list(transformToQPoint(linea) for linea in (hGridLines+vGridLines))
-        self._gridLines = gridLines
+
+            gridLines = list(transformToQPoint(linea) for linea in (hGridLines+vGridLines))
+            self._gridLines = gridLines
+        except OverflowError: 
+            self._gridControlPoints
 
 def segmentLine(line, n=2):
     "Divide las lineas en n segmentos (default n=2)"
-    start = line[0][:]
-    end = line[1][:]
-    dif = np.subtract(end,start)
+    start, end = line
+    dx = (end[0] - start[0]) / n
+    dy = (end[1] - start[1]) / n
     new_line = []
-    for x in list(float(start[0] + dif[0]/n * step) for step in range(n+1)):
-        y = float(start[1] + (x - start[0]) / dif[0] * dif[1])
+    for i in range(n+1):
+        x = start[0] + i * dx
+        y = start[1] + i * dy
         new_line.append((x,y))
     return new_line
 
