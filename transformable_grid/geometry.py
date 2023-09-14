@@ -1,5 +1,5 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-from drawer import GridDisplay
+from drawer import GridWidget
 from phantom import geometry
 import cv2 
 import numpy as np
@@ -10,32 +10,34 @@ class Cycle(list):
         i = index % len(self)
         return super().__getitem__(i)
 
-class TransformableGrid(GridDisplay):
+class TransformableGrid(GridWidget):
 
     pointsChanged = QtCore.Signal()
 
     finished = QtCore.Signal()
     """Emited when the user has finished editing the points."""
-
-    def __init__(self, parent: QtWidgets.QWidget = None, pixmap: QtGui.QPixmap = None):
-        """
-        Initializes the PixmapPreview class.
-        """
+ 
+    def __init__(self, steps, path, parent: QtWidgets.QWidget = None, lines:list[tuple] = None):
+        "Initializes Grid without lines."
+        pixmap = QtGui.QPixmap(path)
         super().__init__(parent, pixmap)
         self.setMinimumHeight(600)
         self.setMinimumWidth(400)
-        self._path = 'D:/Backup/Facultad/PPS/queiloscopy/ipa.jpg'
-        imagen = QtGui.QPixmap(self._path)
-        self._imgcopy = imagen.copy()
-        self.setPixmap(self._imgcopy)
+        self._steps = steps
+        self._path = path
+        self.setCursor(QtCore.Qt.CursorShape.CrossCursor)
+        self.initVariables()
+        if lines is not None:
+            self.setLines(lines)
+
+    def initVariables(self):
         self.setMouseTracking(True)
         self._pointsImageSpace = []  # type: list[QtCore.QPoint]
         self._rectPoints = []  # type: list[QtCore.QPoint]
         self._gridControlPoints = []
         self._controlPoints = []
         self._gridLines = []
-        self._steps = 10
-
+    
         self._curvePoints = []
         self._curves = []
 
@@ -57,9 +59,10 @@ class TransformableGrid(GridDisplay):
         self._controlPointPen = QtGui.QPen(QtGui.QColor("#2980B9"), 10)
         self._gridLinesPen = QtGui.QPen(QtGui.QColor("#CCC"), 2)
         self._editingLinePen = QtGui.QPen(QtGui.QColor("#CCC"), 2)
-        self._finishedlinePen = QtGui.QPen(QtGui.QColor("#FFF"), 2)
+        self._finishedlinePen = QtGui.QPen(QtGui.QColor("#FFF"), 2)      
 
-        self.setCursor(QtCore.Qt.CursorShape.CrossCursor)
+    def setLines(self, lines: list[tuple]):
+        print(lines)
 
     def addRectPoint(self, point: QtCore.QPoint):
         """
@@ -121,6 +124,7 @@ class TransformableGrid(GridDisplay):
         """
         Paints the widget.
         """
+        super().paintEvent(event)
         painter = QtGui.QPainter(self)
 
         rectPoints = self._rectPoints
@@ -184,14 +188,14 @@ class TransformableGrid(GridDisplay):
 
         for line in gridLines[:-2]:
             painter.drawPolyline(line)
-
+        
         p = []
         p.append(transformToPoint(gridLines[-2]))
         
         for line in gridLines[:self._steps -1]:
             p.append(transformToPoint(line))
         p.append(transformToPoint(gridLines[-1]))
-        print(p)
+        
         grid = geometry.grid_from_lines(p,self._steps)
         img = cv2.imread(self._path)
         grid._draw_points(img,255,2)
@@ -444,16 +448,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.pixmap = TransformableGrid()
-
+        path = 'D:/Backup/Facultad/PPS/Criminalistic_tools/transformable_grid/ipa.jpg'
+        #pixmap = QtGui.QPixmap(path)
+        grid = TransformableGrid(10,path)
+        
         w = QtWidgets.QWidget()
         l = QtWidgets.QVBoxLayout()
         w.setLayout(l)
-        l.addWidget(self.pixmap)
-
-        """palette = QtWidgets.QHBoxLayout()
-        self.add_palette_buttons(palette)
-        l.addLayout(palette)"""
+        l.addWidget(grid)
 
         self.setCentralWidget(w)
 

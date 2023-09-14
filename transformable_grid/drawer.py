@@ -1,7 +1,7 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-import math
 
-class GridDisplay(QtWidgets.QWidget):
+
+class GridWidget(QtWidgets.QWidget):
 
     imageRectChanged = QtCore.Signal(QtCore.QRect)
     """Signal emmited when the image rectangle changes."""
@@ -20,7 +20,7 @@ class GridDisplay(QtWidgets.QWidget):
 
     _widgetToImageTransform = QtGui.QTransform()
 
-    #_isDirty = True
+    _isDirty = True
 
     """
     Widget for displaying a QPixmap. The image is scaled proportionally to fit the widget.
@@ -49,6 +49,47 @@ class GridDisplay(QtWidgets.QWidget):
         self._isDirty = True
         self.update()
 
+    def pixmap(self) -> QtGui.QPixmap:
+        """
+        Gets the pixmap to display.
+        """
+        return self._pixmap
+
+    def setTransformationMode(self, transformationMode: QtCore.Qt.TransformationMode) -> None:
+        """
+        Sets the transformation mode to use when scaling the image.
+        """
+        self._transformationMode = transformationMode
+        self._isDirty = True
+        self.update()
+
+    def transformationMode(self) -> QtCore.Qt.TransformationMode:
+        """
+        Gets the transformation mode to use when scaling the image.
+        """
+        return self._transformationMode
+
+    def setAspectRatioMode(self, aspectRatioMode: QtCore.Qt.AspectRatioMode) -> None:
+        """
+        Sets the aspect ratio mode to use when scaling the image.
+        """
+        self._aspectRatioMode = aspectRatioMode
+        self._isDirty = True
+        self.update()
+
+    def aspectRatioMode(self) -> QtCore.Qt.AspectRatioMode:
+        """
+        Gets the aspect ratio mode to use when scaling the image.
+        """
+        return self._aspectRatioMode
+
+    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+        self._processDirty()
+
+        super().paintEvent(event)
+
+        if self._resizedPixmap is not None:
+            QtGui.QPainter(self).drawPixmap(self._imageRect, self._resizedPixmap)
 
     def imageRectChangedEvent(self, imageRect: QtCore.QRect) -> None:
         """
