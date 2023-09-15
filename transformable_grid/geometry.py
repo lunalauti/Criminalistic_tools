@@ -21,8 +21,8 @@ class TransformableGrid(GridWidget):
         "Initializes Grid without lines."
         pixmap = QtGui.QPixmap(path)
         super().__init__(parent, pixmap)
-        self.setMinimumHeight(600)
-        self.setMinimumWidth(400)
+        self.setMinimumHeight(800)
+        self.setMinimumWidth(600)
         self._steps = steps
         self._path = path
         self.setCursor(QtCore.Qt.CursorShape.CrossCursor)
@@ -200,15 +200,20 @@ class TransformableGrid(GridWidget):
         
         grid_origen = geometry.grid_from_lines(p,self._steps)
         img = cv2.imread(self._path)
+        correction = (10,2)
+        size = np.add(self.size().toTuple(),correction)
+        img = cv2.resize(img, size, interpolation=cv2.INTER_LINEAR)
+        
         grid_origen._draw_points(img,(255,0,255),2)
         cv2.imshow('color',img)
 
-        """ 
+        """
             A---------------B
                             |
                             |
                             |
                             C
+        """
         """
         panel_size = 10
         pA = (10,10)
@@ -223,8 +228,7 @@ class TransformableGrid(GridWidget):
         grid_dest = geometry.grid_from_lines(points_dest,self._steps)
         #geometry.grid_transform(img,grid_origen,grid_dest)
         #grid_dest._draw_points(img,(255,255,0),2)
-        #cv2.imshow('color',img)
-
+        #cv2.imshow('color',img)"""
 
     def _widgetToImage(self, point: QtCore.QPoint) -> QtCore.QPoint:
         """
@@ -443,15 +447,18 @@ def getGridLines(controlPoints, xtremePoints, steps, vertical = False):
 
 def linealInterpolation(control1, control2,  n, vertical):
     "Calcula los puntos de control para las rectas de la grilla entre 2 curvas de bezier "
-    dif = np.subtract(control2, control1)
-    if vertical:
-        for y in list(float(control1[1] + dif[1]/n * step) for step in range(1, n+1)):
-            x = float(control1[0] + (y - control1[1]) / dif[1] * dif[0])
-            yield (x, y)
-    else:
-        for x in list(float(control1[0] + dif[0]/n * step) for step in range(1, n+1)):
-            y = float(control1[1] + (x - control1[0]) / dif[0] * dif[1])
-            yield (x, y)
+    try:
+        dif = np.subtract(control2, control1)
+        if vertical:
+            for y in list(float(control1[1] + dif[1]/n * step) for step in range(1, n+1)):
+                x = float(control1[0] + (y - control1[1]) / dif[1] * dif[0])
+                yield (x, y)
+        else:
+            for x in list(float(control1[0] + dif[0]/n * step) for step in range(1, n+1)):
+                y = float(control1[1] + (x - control1[0]) / dif[0] * dif[1])
+                yield (x, y)
+    except OverflowError:
+        pass
 
 
 def getCurve(n, line, controlPoint):
@@ -467,27 +474,4 @@ def bezierCurve(startPoint, endPoint, controlPoint, t):
         t * (1-t) + endPoint[0] * (t**2)
     y = startPoint[1] * ((1-t)**2) + 2 * controlPoint[1] * \
         t * (1-t) + endPoint[1] * (t**2)
-    return x, y
-
-
-class MainWindow(QtWidgets.QMainWindow):
-
-    def __init__(self):
-        super().__init__()
-
-        path = 'D:/Backup/Facultad/PPS/Criminalistic_tools/transformable_grid/ipa.jpg'
-        #pixmap = QtGui.QPixmap(path)
-        grid = TransformableGrid(10,path)
-        
-        w = QtWidgets.QWidget()
-        l = QtWidgets.QVBoxLayout()
-        w.setLayout(l)
-        l.addWidget(grid)
-
-        self.setCentralWidget(w)
-
-
-app = QtWidgets.QApplication()
-window = MainWindow()
-window.show()
-app.exec()
+    return x, y     
