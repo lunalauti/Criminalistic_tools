@@ -19,10 +19,17 @@ class TransformableGrid(GridWidget):
  
     def __init__(self, steps, path, parent: QtWidgets.QWidget = None, lines:list[tuple] = None):
         "Initializes Grid without lines."
-        pixmap = QtGui.QPixmap(path)
+        img = QtGui.QImage(path)
+        print(f'HEIGHT {img.height()} WIDTH {img.width()}')
+        self.scaled_img = self.scaleImage(img,600)
+        print(f'HEIGHT {self.scaled_img.height()} WIDTH {self.scaled_img.width()}')
+        pixmap = QtGui.QPixmap.fromImage(self.scaled_img)
+        
         super().__init__(parent, pixmap)
-        self.setMinimumHeight(800)
-        self.setMinimumWidth(600)
+        #self.setMaximumHeight(1080)
+        #self.setMaximumWidth(600)
+        self.setMinimumHeight(self.scaled_img.height())
+        self.setMinimumWidth(self.scaled_img.width())
         self._steps = steps
         self._path = path
         self.setCursor(QtCore.Qt.CursorShape.CrossCursor)
@@ -30,6 +37,12 @@ class TransformableGrid(GridWidget):
         if lines is not None:
             self.setLines(lines)
 
+    def scaleImage(self, img, maxHeight):
+        if img.height() > maxHeight:
+            #return img.scaled(maxHeight, maxHeight, QtCore.Qt.KeepAspectRatio)
+            return img.scaledToHeight(maxHeight)
+        return img
+    
     def initVariables(self):
         self.setMouseTracking(True)
         self._pointsImageSpace = []  # type: list[QtCore.QPoint]
@@ -200,10 +213,12 @@ class TransformableGrid(GridWidget):
         
         grid_origen = geometry.grid_from_lines(p,self._steps)
         img = cv2.imread(self._path)
-        correction = (10,2)
-        size = np.add(self.size().toTuple(),correction)
+
+        size = (self.scaled_img.width(), self.scaled_img.height())
+        #correction = (10,2)
+        #size = np.subtract(size, correction)
+        #print(size)
         img = cv2.resize(img, size, interpolation=cv2.INTER_LINEAR)
-        
         grid_origen._draw_points(img,(255,0,255),2)
         cv2.imshow('color',img)
 
@@ -352,6 +367,7 @@ class TransformableGrid(GridWidget):
                 # Add a point
                 point = self._widgetToImage(event.pos())
                 self.addRectPoint(point)
+                #print(point)
                 if len(self._pointsImageSpace) == self._requiredPoints:
                     self._hasFinished = True
                     self.createControlPoints(self._rectPoints)

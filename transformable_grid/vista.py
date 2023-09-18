@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
         file_menu = self.menu.addMenu("&Archivo")
         file_menu.addAction(open_button)
         file_menu.addAction(save_button)
-        """
+
         # DOCK
         label = QLabel()
         label.setStyleSheet('background-color: lightgray')
@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
         self.slider_y.setSingleStep(20)
         self.slider_y.setTickPosition(QSlider.TicksBelow)
         self.slider_y.setTickInterval(20)
-        self.slider_y.valueChanged.connect(self.value_changed)"""
+        self.slider_y.valueChanged.connect(self.value_changed)
 
         self.build_dock("Controles", label, posicion['DER'])
 

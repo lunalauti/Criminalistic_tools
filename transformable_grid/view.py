@@ -57,14 +57,15 @@ class MainWindow(QtWidgets.QMainWindow):
         return filename   
     
 class Subventana(QtWidgets.QWidget):
-    def __init__(self, name, widget):
+    def __init__(self, name, widget: QtWidgets):
         super().__init__()
+        #self.setGeometry(200, 100, widget.height(),  widget.width())
         self.setWindowTitle(name)
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(widget)
         self.setLayout(layout)
 
-    
+
 app = QtWidgets.QApplication()
 window = MainWindow()
 window.show()
