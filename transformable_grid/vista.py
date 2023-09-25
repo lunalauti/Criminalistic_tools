@@ -15,7 +15,7 @@ posicion = {
 }
 
 Thresh = namedtuple('Thresh', 'x y')
-
+ 
 
 class MainWindow(QMainWindow):
 

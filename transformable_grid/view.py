@@ -19,8 +19,11 @@ class MainWindow(QtWidgets.QMainWindow):
         save_button = QtGui.QAction("&Save", self)
         # save_button.triggered.connect(self.buttonClick)
         
+        dest_grid = QtGui.QAction("&DestinationGrid", self)
+        dest_grid.triggered.connect(self.createDestGrid)
+
         transform_button = QtGui.QAction("&Transform", self)
-        transform_button.triggered.connect(self.createDestGrid)
+        transform_button.triggered.connect(self.transformGrid)
 
         self.menu = self.menuBar()
 
@@ -30,22 +33,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
         action_menu = self.menu.addMenu("&Actions")
         action_menu.addAction(transform_button)
+        action_menu.addAction(dest_grid)
  
     def open_file(self):
-        path = self.search_file()
-        if path is None:
+        self.path = self.search_file()
+        if self.path is None:
             return
-        grid = gty.TransformableGrid(self.gridSize,path)
-        ventana = Subventana('Origin.py',grid)
+        self.grid = gty.TransformableGrid(self.gridSize, self.path)
+        ventana = Subventana('Origin.py',self.grid)
         ventana.show()
         self.subventanas.append(ventana)
         
     def createDestGrid(self):
         path = 'PPS/Criminalistic_tools/transformable_grid/resources/aspect_ratio.png'
-        grid = gty.TransformableGrid(self.gridSize,path)
-        ventana = Subventana('Destination.py',grid)
+        self.dest = gty.TransformableGrid(self.gridSize,path)
+        ventana = Subventana('Destination.py',self.dest)
         ventana.show()
         self.subventanas.append(ventana)
+
+    def transformGrid (self):
+        gty.gridTranform(self.path, self.grid, self.dest)
+
 
     def search_file(self):
         filename, ok = QtWidgets.QFileDialog.getOpenFileName(

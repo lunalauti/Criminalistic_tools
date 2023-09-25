@@ -20,9 +20,9 @@ class TransformableGrid(GridWidget):
     def __init__(self, steps, path, parent: QtWidgets.QWidget = None, lines:list[tuple] = None):
         "Initializes Grid without lines."
         img = QtGui.QImage(path)
-        print(f'HEIGHT {img.height()} WIDTH {img.width()}')
-        self.scaled_img = self.scaleImage(img,600)
-        print(f'HEIGHT {self.scaled_img.height()} WIDTH {self.scaled_img.width()}')
+        #print(f'HEIGHT {img.height()} WIDTH {img.width()}')
+        self.scaled_img = scaleImage(img,600)
+        #print(f'HEIGHT {self.scaled_img.height()} WIDTH {self.scaled_img.width()}')
         pixmap = QtGui.QPixmap.fromImage(self.scaled_img)
         
         super().__init__(parent, pixmap)
@@ -36,12 +36,6 @@ class TransformableGrid(GridWidget):
         self.initVariables()
         if lines is not None:
             self.setLines(lines)
-
-    def scaleImage(self, img, maxHeight):
-        if img.height() > maxHeight:
-            #return img.scaled(maxHeight, maxHeight, QtCore.Qt.KeepAspectRatio)
-            return img.scaledToHeight(maxHeight)
-        return img
     
     def initVariables(self):
         self.setMouseTracking(True)
@@ -201,9 +195,11 @@ class TransformableGrid(GridWidget):
 
         for line in gridLines[:-2]:
             painter.drawPolyline(line)
-        self.gridTransformation(gridLines)
+        #self.gridTransformation(gridLines)
 
-    def gridTransformation(self,gridLines):
+    
+    def phantom_grid(self):
+        gridLines = self._gridLines
         p = []
         p.append(transformToPoint(gridLines[-2]))
         
@@ -212,6 +208,9 @@ class TransformableGrid(GridWidget):
         p.append(transformToPoint(gridLines[-1]))
         
         grid_origen = geometry.grid_from_lines(p,self._steps)
+        return grid_origen
+    
+        """"""
         img = cv2.imread(self._path)
 
         size = (self.scaled_img.width(), self.scaled_img.height())
@@ -221,15 +220,6 @@ class TransformableGrid(GridWidget):
         img = cv2.resize(img, size, interpolation=cv2.INTER_LINEAR)
         grid_origen._draw_points(img,(255,0,255),2)
         cv2.imshow('color',img)
-
-        """
-            A---------------B
-                            |
-                            |
-                            |
-                            C
-        """
-        """
         panel_size = 10
         pA = (10,10)
         pB = (pA[1]+panel_size * self._steps , 10)
@@ -416,6 +406,21 @@ class TransformableGrid(GridWidget):
             self._gridLines = gridLines
         except OverflowError: 
             self._gridControlPoints
+
+def scaleImage(img, maxHeight):
+        if img.height() > maxHeight:
+            #return img.scaled(maxHeight, maxHeight, QtCore.Qt.KeepAspectRatio)
+            return img.scaledToHeight(maxHeight)
+        return img
+
+def gridTranform (path, grid_origen: TransformableGrid, grid_dest: TransformableGrid):
+    origen = grid_dest.phantom_grid()
+    dest = grid_origen.phantom_grid()
+    img = cv2.imread(path)
+    size = (scaleImage(QtGui.QImage(path),600).width(), scaleImage(QtGui.QImage(path),600).height())
+    img = cv2.resize(img, size, interpolation=cv2.INTER_LINEAR)
+    img = geometry.grid_transform(img[:], origen, dest)
+    print(img)
 
 def segmentLine(line, n=2):
     "Divide las lineas en n segmentos (default n=2)"
